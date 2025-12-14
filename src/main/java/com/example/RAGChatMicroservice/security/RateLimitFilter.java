@@ -7,69 +7,85 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.example.RAGChatMicroservice.constants.FilterConstants.ERROR_TOO_MANY_REQUESTS;
 import static com.example.RAGChatMicroservice.constants.FilterConstants.STATUS_TOO_MANY_REQUESTS;
 
 /**
- * {@code RateLimitFilter} enforces a strict fixed-window rate limiting policy.
+ * {@code RateLimitFilter} enforces a strict fixed-window rate limiting policy
+ * on a per-API basis.
  *
  * <p>
- * This filter allows a maximum number of requests (configured capacity)
- * within a fixed time window (configured duration in minutes).
+ * Each API endpoint is assigned an independent rate-limit window identified
+ * by the HTTP method and Spring's best-matching request pattern.
  * </p>
  *
- * <h3>Behavior</h3>
+ * <h3>Rate-Limiting Behavior</h3>
  * <ul>
- *   <li>Allows exactly {@code capacity} requests per time window.</li>
- *   <li>The {@code capacity + 1} request is rejected immediately with HTTP 429.</li>
+ *   <li>Allows exactly {@code capacity} requests per API within a time window.</li>
+ *   <li>The {@code capacity + 1} request is immediately rejected with HTTP 429.</li>
  *   <li>No token refill or burst tolerance is applied.</li>
  *   <li>The request counter resets only after the full window duration elapses.</li>
  * </ul>
  *
  * <p>
  * This implementation is suitable for single-instance deployments.
- * For distributed environments, a shared store (e.g., Redis) should be used.
+ * For horizontally scaled environments, a distributed store such as Redis
+ * should be used to maintain consistency across instances.
  * </p>
  */
 public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
-     * Maximum allowed requests per window
+     * Maximum number of allowed requests per API per window
      */
     private final int capacity;
 
     /**
-     * Window duration in milliseconds
+     * Fixed window duration in milliseconds
      */
     private final long windowDurationMillis;
 
     /**
-     * Request counter for the current window
+     * Holds per-API rate-limit windows.
+     * <p>
+     * Key format:
+     * <pre>
+     * HTTP_METHOD:/api/path/{pattern}
+     * </pre>
+     * Example:
+     * <pre>
+     * GET:/api/chat/sessions
+     * POST:/api/chat/messages
+     * </pre>
      */
-    private final AtomicInteger requestCounter = new AtomicInteger(0);
+    private final Map<String, RateLimitWindow> apiWindows = new ConcurrentHashMap<>();
 
     /**
-     * Start timestamp of the current window
-     */
-    private volatile long windowStartTimeMillis;
-
-    /**
-     * Constructs the {@code RateLimitFilter} using application rate limit properties.
+     * Constructs a {@code RateLimitFilter} using configured rate-limit properties.
      *
      * @param rateLimitProperties configuration containing capacity and duration
      */
     public RateLimitFilter(RateLimitProperties rateLimitProperties) {
         this.capacity = rateLimitProperties.getCapacity();
         this.windowDurationMillis = rateLimitProperties.getDurationMinutes() * 60_000L;
-        this.windowStartTimeMillis = System.currentTimeMillis();
     }
 
     /**
-     * Applies strict fixed-window rate limiting logic.
+     * Applies strict per-API fixed-window rate-limiting logic.
+     *
+     * <p>
+     * The API key is derived from the HTTP method and Spring's
+     * {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE}, ensuring that
+     * logically identical endpoints (e.g. {@code /sessions/{id}}) share the
+     * same rate-limit window.
+     * </p>
      *
      * @param request     incoming HTTP request
      * @param response    HTTP response
@@ -80,23 +96,47 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        // Resolve the normalized API pattern for per-endpoint isolation
+        Object patternAttr = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+
+        String apiKey = request.getMethod() + ":" + (patternAttr != null ? patternAttr.toString() : request.getRequestURI());
+
         long currentTimeMillis = System.currentTimeMillis();
 
-        synchronized (this) {
+        // Retrieve or create the rate-limit window for this API
+        RateLimitWindow window = apiWindows.computeIfAbsent(apiKey, k -> new RateLimitWindow());
+
+        synchronized (window) {
 
             // Reset the window if the duration has elapsed
-            if (currentTimeMillis - windowStartTimeMillis >= windowDurationMillis) {
-                windowStartTimeMillis = currentTimeMillis;
-                requestCounter.set(0);
+            if (currentTimeMillis - window.windowStart >= windowDurationMillis) {
+                window.windowStart = currentTimeMillis;
+                window.counter.set(0);
             }
 
-            // Increment request count and enforce strict limit
-            if (requestCounter.incrementAndGet() > capacity) {
+            // Enforce strict rate limit
+            if (window.counter.incrementAndGet() > capacity) {
                 FilterResponseUtil.writeJson(response, STATUS_TOO_MANY_REQUESTS, ERROR_TOO_MANY_REQUESTS);
                 return;
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Represents a single fixed-window rate-limit state for an API.
+     */
+    private static class RateLimitWindow {
+
+        /**
+         * Request counter for the current window
+         */
+        AtomicInteger counter = new AtomicInteger(0);
+
+        /**
+         * Window start timestamp in milliseconds
+         */
+        long windowStart = System.currentTimeMillis();
     }
 }
