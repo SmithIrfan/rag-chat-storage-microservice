@@ -142,7 +142,17 @@ Prerequisites
 
 ## 📦 Installation & Setup
 
-## Step 1: Clone the Repository
+## Step 1: Create the Project Directory
+```bash
+ 
+mkdir RAGChatMicroservice
+```
+## Step 2: Navigate to Project Directory
+```bash
+cd RAGChatMicroservice
+```
+
+## Step 3: Clone the Repository
 Clone the repository and move into the project directory:
 
 ```bash
@@ -150,19 +160,13 @@ Clone the repository and move into the project directory:
 git clone https://github.com/SmithIrfan/rag-chat-storage-microservice.git
 ```
 
-
-## Step 2: Navigate to Project Directory
-```bash
-cd RAGChatMicroservice
-```
-
- ##    Step 3: Create Database
+ ##    Step 4: Create Database
 
 ```bash
 
 CREATE DATABASE your_db_name;
 ```
- ## Step 4: Configure Environment Variables (.env)
+ ## Step 5: Configure Environment Variables (.env)
  Create a .env file in the project root     directory.
  ```bash
 DB_URL=jdbc:mysql://localhost:3306/<your_db_name>
@@ -170,7 +174,7 @@ DB_USERNAME=your_db_username
 DB_PASSWORD=your_db_password
 API_KEY=your-api-key
 ```
-## Step 5: Update Application Properties (IMPORTANT)
+## Step 6: Update Application Properties (IMPORTANT)
  spring.jpa.hibernate.ddl-auto=none
 
 👉 Change it to:
@@ -179,7 +183,7 @@ API_KEY=your-api-key
 spring.jpa.hibernate.ddl-auto=update
 ```
 
-## Step 6: Run the Application Start the Spring Boot application using Maven
+## Step 7: Run the Application Start the Spring Boot application using Maven
 
 ```bash
 mvn spring-boot:run
