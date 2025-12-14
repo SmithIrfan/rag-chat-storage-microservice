@@ -131,8 +131,11 @@ Follow the steps below to get the application running on your local machine.
 
 Prerequisites
 • Java 21
+
 • Maven
+
 • MySQL (running locally)
+
 • Git
 
 📦 Installation & Setup
@@ -140,6 +143,7 @@ Step 1: Clone the Repository
 Clone the repository and move into the project directory:
 
 git clone https://github.com/SmithIrfan/rag-chat-storage-microservice.git
+
 cd RAGChatMicroservice
 
 Step 2: Create Database
@@ -156,16 +160,21 @@ Create a .env file in the project root directory.
 Add ONLY sensitive values:
 
 DB_URL=jdbc:mysql://localhost:3306/<your_db_name>
+
 DB_USERNAME=your_db_username
+
 DB_PASSWORD=your_db_password
+
 API_KEY=your-api-key
 
 Notes:
 • Database name can be changed here
+
 • .env is NOT responsible for table creation
 
 Step 4: Update Application Properties (IMPORTANT)
-Open application.properties .
+
+Open application.properties 
 
 Locate the following property:
 
