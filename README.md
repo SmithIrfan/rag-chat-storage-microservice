@@ -124,7 +124,67 @@ availability.
 - Basic unit tests for services/business logic
 - CORS configuration for security
 - Pagination support for chat messages
-  
+
+🚀 Quick Start
+
+Follow the steps below to get the application running on your local machine.
+
+Prerequisites
+• Java 21
+• Maven
+• MySQL (running locally)
+• Git
+
+📦 Installation & Setup
+Step 1: Clone the Repository
+Clone the repository and move into the project directory:
+
+git clone https://github.com/SmithIrfan/rag-chat-storage-microservice.git
+cd RAGChatMicroservice
+
+Step 2: Create Database
+Create an empty database in MySQL.
+Example:
+
+CREATE DATABASE <your_db_name>;
+
+⚠️ Only the database is created manually.
+Tables will be created automatically by the application.
+
+Step 3: Configure Environment Variables (.env)
+Create a .env file in the project root directory.
+Add ONLY sensitive values:
+
+DB_URL=jdbc:mysql://localhost:3306/<your_db_name>
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+API_KEY=your-api-key
+
+Notes:
+• Database name can be changed here
+• .env is NOT responsible for table creation
+
+Step 4: Update Application Properties (IMPORTANT)
+Open application.properties .
+
+Locate the following property:
+
+spring.jpa.hibernate.ddl-auto=none
+
+👉 Change it to:
+
+spring.jpa.hibernate.ddl-auto=update
+
+Why this change is required:
+• Ensures tables are created automatically if they do not exist
+• Updates schema when entity changes occur
+• No manual SQL needed for table creation
+
+Step 5: Run the Application
+Start the Spring Boot application using Maven:
+
+mvn spring-boot:run
+
 📌Design Decisions Beyond Case Study Requirements
 
 The original case study required storing chat sessions and messages. This implementation extends the design by making the userId field optional, allowing sessions to be either associated with an external user reference or remain user-agnostic.
