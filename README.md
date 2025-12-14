@@ -11,31 +11,31 @@ The service supports both user-associated and user-agnostic chat sessions by all
 - Docker & Docker Compose
 - Swagger / OpenAPI (springdoc)
 - API Key Security & Rate Limiting
-  📂 Project Structure
-  RAGChatMicroservice
-  ├── src/main/java/com/example/RAGChatMicroservice
-  │   ├── controller        # REST controllers
-  │   ├── service           # Business logic
-  │   ├── repository        # JPA repositories
-  │   ├── entity            # JPA entities
-  │   ├── dto               # Request / Response DTOs
-  │   ├── security          # API key & rate limiting filters
-  │   ├── exception         # Global exception handling
-  │   ├── config            # Application & Swagger configs
-  │   ├── constants         # API path constants
-  │   ├── properties        # Custom property mappings
-  │   └── util              # Utility classes
-  ├── docker-compose.yml
-  ├── Dockerfile
-  ├── .env
-  └── pom.xml
-  ⚙️ Setup & Running Instructions
-  Prerequisites
+📂 Project Structure
+RAGChatMicroservice
+├── src/main/java/com/example/RAGChatMicroservice
+│   ├── controller        # REST controllers
+│   ├── service           # Business logic
+│   ├── repository        # JPA repositories
+│   ├── entity            # JPA entities
+│   ├── dto               # Request / Response DTOs
+│   ├── security          # API key & rate limiting filters
+│   ├── exception         # Global exception handling
+│   ├── config            # Application & Swagger configs
+│   ├── constants         # API path constants
+│   ├── properties        # Custom property mappings
+│   └── util              # Utility classes
+├── docker-compose.yml
+├── Dockerfile
+├── .env
+└── pom.xml
+⚙️ Setup & Running Instructions
+Prerequisites
 - Java 21
 - Maven 3.8+
 - Docker & Docker Compose (optional)
-  Environment Configuration
-  Create a `.env` file based on `.env.example`:
+Environment Configuration
+Create a `.env` file based on `.env.example`:
 
 DB_URL=jdbc:mysql://localhost:3306/rag_chat
 DB_USERNAME=root
@@ -51,60 +51,60 @@ http://localhost:9091
 This service is designed to work in two modes:
 
 1. User-Specific Mode
-    - userId is provided in the request.
-    - Sessions and messages are associated with a specific user.
-    - Suitable for authenticated applications (e.g., dashboards, portals).
+   - userId is provided in the request.
+   - Sessions and messages are associated with a specific user.
+   - Suitable for authenticated applications (e.g., dashboards, portals).
 
 2. Generic / Anonymous Mode
-    - userId is optional.
-    - If omitted, sessions are created without user binding.
-    - Suitable for:
-        - AI demos
-        - Internal tools
-        - System-generated conversations
-        - Anonymous chat use cases
-          📡 API Overview
-          Base URL:
-          /v1/vp/sessions
-          Chat Session APIs
+   - userId is optional.
+   - If omitted, sessions are created without user binding.
+   - Suitable for:
+     - AI demos
+     - Internal tools
+     - System-generated conversations
+     - Anonymous chat use cases
+📡 API Overview
+Base URL:
+/v1/vp/sessions
+Chat Session APIs
 - Create Chat Session (POST /v1/vp/sessions/create-session)
-  {
+{
   "name": "My Chat Session",
   "userId": "opt1"    // optional
-  }
+}
 - Rename Chat Session (PUT /v1/vp/sessions/{sessionId}/rename)
 - Get All Sessions (GET /v1/vp/sessions/get-all-sessions)
 - Mark / Unmark Favorite Session (PUT /v1/vp/sessions/{sessionId}/favorite)
 - Delete Session (DELETE /v1/vp/sessions/{sessionId})
-  Chat Message APIs
+Chat Message APIs
 - Add Message to Session (POST /v1/vp/sessions/{sessionId}/add-messages)
-  {
+{
   "sender": "AI",
   "content": "A single user can have multiple independent chat sessions.",
   "context": "session_2_chat",
   "userId": "opt1"
-  }
+}
 - Get Messages by Session (Paginated) (GET /v1/vp/sessions/{sessionId}/get-messages?page=0&size=5)
-  🔒 Security
+🔒 Security
 - All APIs are secured using API Key Authentication.
 - API key must be passed via header:
-  X-API-KEY: your-api-key
+X-API-KEY: your-api-key
 - Rate limiting is enforced using servlet filters.
-  📖 API Documentation (Swagger)
-  Available at:
-  http://localhost:9091/swagger-ui/index.html
-  ⚠️ Error Handling
+📖 API Documentation (Swagger)
+Available at:
+http://localhost:9091/swagger-ui/index.html
+⚠️ Error Handling
 - Centralized global exception handling.
 - Consistent API response structure.
 - Proper HTTP status codes (400, 404, 500, etc.).
-  🌟 Bonus Features
+🌟 Bonus Features
 - Health check endpoints
 - Swagger/OpenAPI documentation
 - Dockerized database management tool (pgAdmin/Adminer)
 - Basic unit tests for services/business logic
 - CORS configuration for security
 - Pagination support for chat messages
-
+  
 📌Design Decisions Beyond Case Study Requirements
 
 The original case study required storing chat sessions and messages. This implementation extends the design by making the userId field optional, allowing sessions to be either associated with an external user reference or remain user-agnostic.
