@@ -150,7 +150,7 @@ Step 2: Create Database
 Create an empty database in MySQL.
 Example:
 
-CREATE DATABASE <your_db_name>;
+CREATE DATABASE your_db_name;
 
 ⚠️ Only the database is created manually.
 Tables will be created automatically by the application.
