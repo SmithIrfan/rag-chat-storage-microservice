@@ -16,8 +16,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.example.RAGChatMicroservice.constants.FilterConstants.ERROR_TOO_MANY_REQUESTS;
 import static com.example.RAGChatMicroservice.constants.FilterConstants.STATUS_TOO_MANY_REQUESTS;
-import static jakarta.servlet.RequestDispatcher.ERROR_MESSAGE;
 
 /**
  * Servlet filter for rate limiting using Bucket4j.
@@ -68,7 +68,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Bucket bucket = buckets.computeIfAbsent(clientIp, key -> createBucket());
 
         if (!bucket.tryConsume(1)) {
-            FilterResponseUtil.writeJson(response, STATUS_TOO_MANY_REQUESTS, ERROR_MESSAGE);
+            FilterResponseUtil.writeJson(response, STATUS_TOO_MANY_REQUESTS, ERROR_TOO_MANY_REQUESTS);
             return;
         }
 
