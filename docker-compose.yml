@@ -1,14 +1,21 @@
 services:
 
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     container_name: ragchat-mysql
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
     volumes:
       - ragchat-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
@@ -17,12 +24,14 @@ services:
     ports:
       - "9091:9091"
     environment:
+      SERVER_PORT: 9091
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       API_KEY: ${API_KEY}
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   adminer:
     image: adminer
