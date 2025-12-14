@@ -37,7 +37,7 @@ Prerequisites
 Environment Configuration
 Create a `.env` file based on `.env.example`:
 
-DB_URL=jdbc:mysql://localhost:3306/rag_chat
+DB_URL=jdbc:mysql://localhost:<your_db_port>/<your_db_name>
 DB_USERNAME=root
 DB_PASSWORD=root
 API_KEY=your-api-key
@@ -96,7 +96,7 @@ Interactive API documentation is available via Swagger UI and provides details o
 request/response models and endpoints.
 
 Swagger UI:
-http://localhost:9091/swagger-ui/index.html
+http://localhost:<your_port>/swagger-ui/index.html
 
 
 🩺 Health Check
@@ -107,7 +107,7 @@ Health Endpoint:
 GET /actuator/health
 
 Example:
-http://localhost:9091/actuator/health
+http://localhost:<your_port>/actuator/health
 
 This endpoint can be used by Docker, Kubernetes, or monitoring tools to verify service 
 availability.
