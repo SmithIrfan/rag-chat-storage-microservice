@@ -1,0 +1,37 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: ragchat-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ragchat-mysql-data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: ragchat-app
+    restart: always
+    ports:
+      - "9091:9091"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      API_KEY: ${API_KEY}
+    depends_on:
+      - mysql
+
+  adminer:
+    image: adminer
+    container_name: ragchat-adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+
+volumes:
+  ragchat-mysql-data:
