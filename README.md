@@ -169,10 +169,14 @@ CREATE DATABASE your_db_name;
  ## Step 5: Configure Environment Variables (.env)
  Create a .env file in the project root     directory.
  ```bash
-DB_URL=jdbc:mysql://localhost:3306/<your_db_name>
+SERVER_PORT=your_server_port_here
+
+DB_URL=jdbc:mysql://<host>:<port>/<db_name>
 DB_USERNAME=your_db_username
 DB_PASSWORD=your_db_password
-API_KEY=your-api-key
+DB_NAME=your_db_name_here
+
+API_KEY=your-api-key-here
 ```
 ## Step 6: Update Application Properties (IMPORTANT)
  spring.jpa.hibernate.ddl-auto=none
