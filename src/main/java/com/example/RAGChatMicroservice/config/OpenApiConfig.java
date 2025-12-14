@@ -31,7 +31,14 @@ public class OpenApiConfig {
      */
     @Bean
     public OpenAPI customOpenAPI() {
-        SecurityScheme apiKeyScheme = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name(HEADER_API_KEY);
-        return new OpenAPI().components(new Components().addSecuritySchemes(API_KEY_SCHEME, apiKeyScheme)).addSecurityItem(new SecurityRequirement().addList(API_KEY_SCHEME));
+        SecurityScheme apiKeyScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY)
+                .in(SecurityScheme.In.HEADER)
+                .name(HEADER_API_KEY);
+
+        return new OpenAPI()
+                .components(new Components().addSecuritySchemes(API_KEY_SCHEME, apiKeyScheme))
+                .addSecurityItem(new SecurityRequirement().addList(API_KEY_SCHEME));
     }
+
 }
