@@ -91,8 +91,28 @@ Chat Message APIs
 X-API-KEY: your-api-key
 - Rate limiting is enforced using servlet filters.
 📖 API Documentation (Swagger)
-Available at:
+
+Interactive API documentation is available via Swagger UI and provides details of all 
+request/response models and endpoints.
+
+Swagger UI:
 http://localhost:9091/swagger-ui/index.html
+
+
+🩺 Health Check
+
+The service exposes health check endpoints to support monitoring and container orchestration.
+
+Health Endpoint:
+GET /actuator/health
+
+Example:
+http://localhost:9091/actuator/health
+
+This endpoint can be used by Docker, Kubernetes, or monitoring tools to verify service 
+availability.
+
+
 ⚠️ Error Handling
 - Centralized global exception handling.
 - Consistent API response structure.
