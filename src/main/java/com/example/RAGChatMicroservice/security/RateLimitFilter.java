@@ -2,9 +2,6 @@ package com.example.RAGChatMicroservice.security;
 
 import com.example.RAGChatMicroservice.properties.RateLimitProperties;
 import com.example.RAGChatMicroservice.util.FilterResponseUtil;
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,64 +9,92 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.example.RAGChatMicroservice.constants.FilterConstants.ERROR_TOO_MANY_REQUESTS;
 import static com.example.RAGChatMicroservice.constants.FilterConstants.STATUS_TOO_MANY_REQUESTS;
 
 /**
- * Servlet filter for rate limiting using Bucket4j.
+ * {@code RateLimitFilter} enforces a strict fixed-window rate limiting policy.
  *
  * <p>
- * Restricts the number of requests per client IP within a given time window.
- * If the limit is exceeded, the request is rejected with HTTP 429 (Too Many Requests).
+ * This filter allows a maximum number of requests (configured capacity)
+ * within a fixed time window (configured duration in minutes).
+ * </p>
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Allows exactly {@code capacity} requests per time window.</li>
+ *   <li>The {@code capacity + 1} request is rejected immediately with HTTP 429.</li>
+ *   <li>No token refill or burst tolerance is applied.</li>
+ *   <li>The request counter resets only after the full window duration elapses.</li>
+ * </ul>
+ *
+ * <p>
+ * This implementation is suitable for single-instance deployments.
+ * For distributed environments, a shared store (e.g., Redis) should be used.
  * </p>
  */
-
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    /**
+     * Maximum allowed requests per window
+     */
+    private final int capacity;
 
     /**
-     * Map of client IPs to their respective rate limit buckets.
+     * Window duration in milliseconds
      */
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final long windowDurationMillis;
 
-    private final RateLimitProperties properties;
+    /**
+     * Request counter for the current window
+     */
+    private final AtomicInteger requestCounter = new AtomicInteger(0);
 
-    public RateLimitFilter(RateLimitProperties properties) {
-        this.properties = properties;
+    /**
+     * Start timestamp of the current window
+     */
+    private volatile long windowStartTimeMillis;
+
+    /**
+     * Constructs the {@code RateLimitFilter} using application rate limit properties.
+     *
+     * @param rateLimitProperties configuration containing capacity and duration
+     */
+    public RateLimitFilter(RateLimitProperties rateLimitProperties) {
+        this.capacity = rateLimitProperties.getCapacity();
+        this.windowDurationMillis = rateLimitProperties.getDurationMinutes() * 60_000L;
+        this.windowStartTimeMillis = System.currentTimeMillis();
     }
 
-
     /**
-     * Creates a new rate limit bucket with the configured limit and duration.
+     * Applies strict fixed-window rate limiting logic.
      *
-     * @return a new {@link Bucket} instance
-     */
-    private Bucket createBucket() {
-        return Bucket.builder().addLimit(Bandwidth.classic(properties.getCapacity(), Refill.greedy(properties.getCapacity(), Duration.ofMinutes(properties.getDurationMinutes())))).build();
-    }
-
-    /**
-     * Applies rate limiting for each incoming request based on client IP.
-     *
-     * @param request     the incoming HTTP request
-     * @param response    the HTTP response
-     * @param filterChain the filter chain to continue processing if allowed
-     * @throws IOException      if an I/O error occurs
-     * @throws ServletException if a servlet error occurs
+     * @param request     incoming HTTP request
+     * @param response    HTTP response
+     * @param filterChain filter chain
+     * @throws ServletException in case of servlet errors
+     * @throws IOException      in case of I/O errors
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String clientIp = request.getRemoteAddr();
-        Bucket bucket = buckets.computeIfAbsent(clientIp, key -> createBucket());
+        long currentTimeMillis = System.currentTimeMillis();
 
-        if (!bucket.tryConsume(1)) {
-            FilterResponseUtil.writeJson(response, STATUS_TOO_MANY_REQUESTS, ERROR_TOO_MANY_REQUESTS);
-            return;
+        synchronized (this) {
+
+            // Reset the window if the duration has elapsed
+            if (currentTimeMillis - windowStartTimeMillis >= windowDurationMillis) {
+                windowStartTimeMillis = currentTimeMillis;
+                requestCounter.set(0);
+            }
+
+            // Increment request count and enforce strict limit
+            if (requestCounter.incrementAndGet() > capacity) {
+                FilterResponseUtil.writeJson(response, STATUS_TOO_MANY_REQUESTS, ERROR_TOO_MANY_REQUESTS);
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
